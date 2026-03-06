@@ -26,6 +26,7 @@ INSTALLED_APPS += [
     'api',
     'common',
     'accounts',
+    'news',
 ]
 
 INSTALLED_APPS += [
