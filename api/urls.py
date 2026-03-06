@@ -1,5 +1,11 @@
-from django.urls import path, include
+from api.spectacular.urls import urlpatterns as doc_urls
+from accounts.urls import urlpatterns as accounts
+from statistic.urls import urlpatterns as statistica
 
-urlpatterns = [
-    path("auth/", include("accounts.urls")),
-]
+app_name = 'api'
+
+urlpatterns = []
+
+urlpatterns += doc_urls
+urlpatterns += accounts
+urlpatterns += statistica

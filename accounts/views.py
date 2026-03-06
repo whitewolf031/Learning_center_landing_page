@@ -1,69 +1,69 @@
-from rest_framework import status
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from .serializers import RegisterSerializer, LoginSerializer, LogoutSerializer, ProfileSerializer
+from rest_framework import generics, status
+from .models import CustomUser
 
-from .serializers import RegisterSerializer, LoginSerializer, UserProfileSerializer
-
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-    return {
-        "refresh": str(refresh),
-        "access":  str(refresh.access_token),
-    }
-
-class RegisterView(APIView):
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            tokens = get_tokens_for_user(user)
-            return Response(
-                {"message": "Ro'yxatdan o'tish muvaffaqiyatli!", "tokens": tokens},
-                status=status.HTTP_201_CREATED,
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LoginView(APIView):
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        user = CustomUser.objects.get(phone_number=request.data['phone_number'])
+        refresh = RefreshToken.for_user(user)
+
+        response.data = {
+            "user": response.data,
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
+        return response
+
+class LoginView(generics.GenericAPIView):
+    serializer_class = LoginSerializer
     permission_classes = [AllowAny]
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user   = serializer.validated_data["user"]
-            tokens = get_tokens_for_user(user)
-            return Response(
-                {"message": "Kirish muvaffaqiyatli!", "tokens": tokens},
-                status=status.HTTP_200_OK,
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
-    def post(self, request):
-        try:
-            refresh_token = request.data["refresh"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response(
-                {"message": "Tizimdan muvaffaqiyatli chiqdingiz."},
-                status=status.HTTP_205_RESET_CONTENT,
-            )
-        except Exception:
-            return Response(
-                {"error": "Token noto'g'ri yoki allaqachon blacklistga qo'shilgan."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-class ProfileView(APIView):
+        user = serializer.validated_data["user"]
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": {
+                "id": user.id,
+                "phone_number": user.phone_number,
+                "first_name": user.first_name,
+            }
+        }, status=status.HTTP_200_OK)
+
+class LogoutView(generics.GenericAPIView):
+    serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated]
-    def get(self, request):
-        serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data)
-    def patch(self, request):
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({"message": "Muvaffaqiyatli chiqildi"},
+                        status=status.HTTP_200_OK)
+    
+class ProfileView(generics.RetrieveAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = CustomUser.objects.all()
+
+    def get_object(self):
+        obj = super().get_object()
+
+        # Faqat o'z profilini ko‘rishga ruxsat
+        if obj != self.request.user:
+            raise PermissionError("Siz boshqa foydalanuvchi profilini ko‘ra olmaysiz")
+
+        return obj

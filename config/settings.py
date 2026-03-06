@@ -127,7 +127,7 @@ MEDIA_TEST_ROOT = os.path.join(BASE_DIR, 'media/test/')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Your Project API',
+    'TITLE': 'Learning center landing page',
         'DESCRIPTION': 'Your project description',
     'VERSION': '1.0.0',
 
