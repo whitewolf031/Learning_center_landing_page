@@ -19,8 +19,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
-]
+    'django.contrib.staticfiles',  
+    ]
 
 INSTALLED_APPS += [
     'api',
@@ -30,9 +30,15 @@ INSTALLED_APPS += [
 
 INSTALLED_APPS += [
     'rest_framework',
+
+# account bo'liminiki
+    'drf_spectacular',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 INSTALLED_APPS += ['corsheaders',]
+
+AUTH_USER_MODEL = "accounts.CustomUser"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -145,8 +151,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',),
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
-       'rest_framework_simplejwt.authentication.JWTAuthentication',
-       'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ],
 
     'DEFAULT_PARSER_CLASSES': [
