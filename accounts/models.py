@@ -1,36 +1,34 @@
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractUser
 from django.db import models
+from .manager import CustomUserManager
 
-class CustomUserManager(BaseUserManager):
-    def create_user(self, username, phone, password=None, **extra_fields):
-        if not username:
-            raise ValueError("Username majburiy")
-        if not phone:
-            raise ValueError("Telefon raqam majburiy")
-        user = self.model(username=username, phone=phone, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-    def create_superuser(self, username, phone, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-        return self.create_user(username, phone, password, **extra_fields)
+class CustomUser(AbstractUser):
+    # Username ni butunlay o‘chiramiz yoki ixtiyoriy qoldiramiz
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
 
-class CustomUser(AbstractBaseUser, PermissionsMixin):
-    username   = models.CharField(max_length=150, unique=True)
-    first_name = models.CharField(max_length=100)
-    last_name  = models.CharField(max_length=100)
-    phone      = models.CharField(max_length=20, unique=True)
-    is_active  = models.BooleanField(default=True)
-    is_staff   = models.BooleanField(default=False)
+    phone_number = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Telefon raqami",
+    )
+    phone_verified = models.BooleanField(default=False, verbose_name="Tasdiqlangan")
+
+    first_name = models.CharField(max_length=50, blank=True)
+    last_name = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    objects = CustomUserManager()
-    USERNAME_FIELD  = "username"
-    REQUIRED_FIELDS = ["phone"]
+
+    USERNAME_FIELD = "phone_number"
+    REQUIRED_FIELDS = []
+
+    def __str__(self):
+        return self.phone_number or "No phone"
 
     class Meta:
         verbose_name = "Foydalanuvchi"
         verbose_name_plural = "Foydalanuvchilar"
-
-    def __str__(self):
-        return f"{self.username} ({self.phone})"
